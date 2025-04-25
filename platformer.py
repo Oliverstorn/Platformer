@@ -2,7 +2,9 @@ import pygame as pg
 
 # Setup
 pg.init()
+
 clock = pg.time.Clock()
+fps = 60
 
 # Setting the screen up
 screen_widht = 1000
@@ -17,23 +19,34 @@ tile_size = 50
 #Load images
 sun_img = pg.image.load("img/sun.png")
 bg_img = pg.image.load("img/sky.png")
-player_img = pg.image.load("img/sanke.png")
+#player_img = pg.image.load("img/sanke.png")
 
 
 class Player():
     def __init__(self,x,y):
-        img =pg.image.load("img/sanke.png")
-        self.img = pg.transform.scale(img, (80,80))
-        self.rect = self.img.get_rect()
+        self.images_right = []
+        self.images_left = []
+        self.index = 0
+        self.counter = 0
+        for num in range(1,3):
+            img_right =pg.image.load(f"img/sanke{num}.png")
+            img_right = pg.transform.scale(img_right, (80,80))
+            img_left = pg.transform.flip(img_right, True, False)
+            self.images_right.append(img_right)
+            self.images_left.append(img_left)
+        self.image = self.images_right[self.index]
+        self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.vel_y = 0
         self.jumped = False
+        self.direction = 0
 
     def update(self):
-
         dx = 0
         dy = 0
+        walk_cooldown = 10
+
         #get key presses
         key = pg.key.get_pressed()
         if key[pg.K_SPACE] and self.jumped == False:
@@ -43,8 +56,30 @@ class Player():
             self.jumped = False
         if key[pg.K_LEFT]:
             dx -= 5
+            self.counter += 1
+            self.direction = -1
         if key[pg.K_RIGHT]:
             dx += 5
+            self.counter += 1
+            self.direction = 1
+        if key[pg.K_LEFT] == False and key[pg.K_RIGHT] == False:
+            self.counter = 0
+            self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+
+        #handle animation
+        if self.counter > walk_cooldown:
+            self.counter = 0
+            self.index += 1
+            if self.index >= len(self.images_right):
+                self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            elif self.direction == -1:
+                self.image = self.images_left[self.index]
 
         # add gravity
         self.vel_y += 1
@@ -53,6 +88,7 @@ class Player():
         dy += self.vel_y
 
         #Check for collision
+        
 
         #Update player position
         self.rect.x += dx
@@ -67,7 +103,7 @@ class Player():
 #Adjust player position
 
         #draw player onto screen
-        screen.blit(self.img, self.rect)
+        screen.blit(self.image, self.rect)
 
 class World():
     def __init__(self,data):
@@ -132,6 +168,8 @@ run = True
 # Main loop
 while run:
     
+    clock.tick(fps)
+
     screen.blit(bg_img, (0,0))
     screen.blit(sun_img, (100,100))
 

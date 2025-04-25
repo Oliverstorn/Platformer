@@ -13,7 +13,7 @@ tile_size = 50
 cols = 16
 margin = 100
 screen_width = tile_size * cols
-screen_height = (tile_size * cols) + margin
+screen_height = (tile_size * cols)
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Level Editor')
