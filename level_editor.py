@@ -11,7 +11,7 @@ fps = 60
 tile_size = 50
 cols = 20
 rows = 16
-margin = 100
+margin = 90
 screen_width = tile_size * cols
 screen_height = (tile_size * rows) + margin
 
