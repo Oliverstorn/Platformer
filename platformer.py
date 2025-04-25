@@ -20,31 +20,41 @@ game_over = 0
 #Load images
 sun_img = pg.image.load("img/sun.png")
 bg_img = pg.image.load("img/sky.png")
-#player_img = pg.image.load("img/sanke.png")
+restart_img = pg.image.load("img/restart_btn.png")
 
 
-class Player():
-    def __init__(self,x,y):
-        self.images_right = []
-        self.images_left = []
-        self.index = 0
-        self.counter = 0
-        for num in range(1,3):
-            img_right =pg.image.load(f"img/sanke{num}.png")
-            img_right = pg.transform.scale(img_right, (40,80))
-            img_left = pg.transform.flip(img_right, True, False)
-            self.images_right.append(img_right)
-            self.images_left.append(img_left)
-        self.dead_image = pg.image.load("img/ghost.png")
-        self.image = self.images_right[self.index]
+class Button():
+    def __init__(self, x, y, image):
+        self.image = image
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.vel_y = 0
-        self.jumped = False
-        self.direction = 0
+        self.clicked = False
+
+    def draw(self):
+        action = False
+        #get mouse position
+        pos = pg.mouse.get_pos()
+
+        #check mouseover and clicked condition
+        if self.rect.collidepoint(pos):
+            if pg.mouse.get_pressed()[0] == 1 and self.clicked == False:
+                action = True
+                self.clicked = True
+                
+        
+        if pg.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+                
+    
+        #Draw button
+        screen.blit(self.image, (self.rect))
+
+        return action
+    
+class Player():
+    def __init__(self,x,y):
+        self.reset(x,y)
 
     def update(self, game_over):
         dx = 0
@@ -55,7 +65,7 @@ class Player():
 
             #get key presses
             key = pg.key.get_pressed()
-            if key[pg.K_SPACE] and self.jumped == False:
+            if key[pg.K_SPACE] and self.jumped == False and self.in_air == False:
                 self.vel_y = -15
                 self.jumped = True
             if key[pg.K_SPACE] == False:
@@ -94,11 +104,11 @@ class Player():
             dy += self.vel_y
 
             #Check for collision
+            self.in_air = True
             for tile in world.tile_list:
                 #check for collision in x direction
                 if tile[1].colliderect(self.rect.x +dx, self.rect.y, self.width, self.height):
                     dx = 0
-                
                 #check for collision in y direction
                 if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                     #check if below the ground i.e jumping
@@ -109,6 +119,7 @@ class Player():
                     elif self.vel_y >= 0:
                         dy =tile[1].top - self.rect.bottom
                         self.vel_y = 0
+                        self.in_air = False
 
             #check for collision with enemies
             if pg.sprite.spritecollide(self, slot_group, False):
@@ -137,6 +148,29 @@ class Player():
         pg.draw.rect(screen, (255,255,255), self.rect,2)
 
         return game_over
+
+    def reset(self, x, y):
+        self.images_right = []
+        self.images_left = []
+        self.index = 0
+        self.counter = 0
+        for num in range(1,3):
+            img_right =pg.image.load(f"img/sanke{num}.png")
+            img_right = pg.transform.scale(img_right, (40,80))
+            img_left = pg.transform.flip(img_right, True, False)
+            self.images_right.append(img_right)
+            self.images_left.append(img_left)
+        self.dead_image = pg.image.load("img/ghost.png")
+        self.image = self.images_right[self.index]
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.vel_y = 0
+        self.jumped = False
+        self.direction = 0
+        self.in_air = True
 
 class World():
     def __init__(self,data):
@@ -220,7 +254,7 @@ world_data= [
 [1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,1,0,0,0,3,0,0,0,0,2,0,0,0,0,0,0,0,0,1],
 [1,0,0,2,2,2,2,0,0,2,1,0,0,2,2,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,1],
 [1,0,0,0,0,0,0,3,0,0,2,0,2,0,2,2,2,1,1,1],
@@ -229,12 +263,16 @@ world_data= [
 [1,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ]
 
+
 player = Player(100, screen_height - 107)
 
 slot_group = pg.sprite.Group()
 lava_group = pg.sprite.Group()
 
 world = World(world_data)
+
+#Create buttons
+restart_button = Button(screen_widht // 2 - 50, screen_height // 2 + 100, restart_img)
 
 run = True
 # Main loop
@@ -255,6 +293,11 @@ while run:
 
     game_over = player.update(game_over)
 
+    #If player is dead
+    if game_over == -1:
+        if restart_button.draw():
+            player.reset(100, screen_height - 107)
+            game_over = 0
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
