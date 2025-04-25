@@ -15,12 +15,15 @@ pg.display.set_caption("Sankeformer")
 # define game variables
 tile_size = 50
 game_over = 0
+main_menu = True
 
 
 #Load images
 sun_img = pg.image.load("img/sun.png")
 bg_img = pg.image.load("img/sky.png")
 restart_img = pg.image.load("img/restart_btn.png")
+start_img = pg.image.load("img/start_btn.png")
+exit_img = pg.image.load("img/exit_btn.png")
 
 
 class Button():
@@ -273,6 +276,8 @@ world = World(world_data)
 
 #Create buttons
 restart_button = Button(screen_widht // 2 - 50, screen_height // 2 + 100, restart_img)
+start_button = Button(screen_widht // 2 - 350, screen_height // 2, start_img)
+exit_button = Button(screen_widht // 2 + 150, screen_height // 2, exit_img)
 
 run = True
 # Main loop
@@ -283,21 +288,28 @@ while run:
     screen.blit(bg_img, (0,0))
     screen.blit(sun_img, (100,100))
 
-    world.draw()
+    if main_menu == True:
+        if exit_button.draw() == True:
+            run = False
+        if start_button.draw() == True:
+            main_menu = False
+    else: 
 
-    if game_over == 0:
-        slot_group.update()
+        world.draw()
 
-    slot_group.draw(screen)
-    lava_group.draw(screen)
+        if game_over == 0:
+            slot_group.update()
 
-    game_over = player.update(game_over)
+        slot_group.draw(screen)
+        lava_group.draw(screen)
 
-    #If player is dead
-    if game_over == -1:
-        if restart_button.draw():
-            player.reset(100, screen_height - 107)
-            game_over = 0
+        game_over = player.update(game_over)
+
+        #If player is dead
+        if game_over == -1:
+            if restart_button.draw():
+                player.reset(100, screen_height - 107)
+                game_over = 0
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
