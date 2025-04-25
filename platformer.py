@@ -1,4 +1,6 @@
 import pygame as pg
+import pickle
+from os import path
 
 # Setup
 pg.init()
@@ -16,6 +18,8 @@ pg.display.set_caption("Sankeformer")
 tile_size = 50
 game_over = 0
 main_menu = True
+level = 1
+max_levels = 2
 
 
 #Load images
@@ -24,6 +28,21 @@ bg_img = pg.image.load("img/sky.png")
 restart_img = pg.image.load("img/restart_btn.png")
 start_img = pg.image.load("img/start_btn.png")
 exit_img = pg.image.load("img/exit_btn.png")
+
+#function to reset level
+def reset_level(level):
+    player.reset(100, screen_height - 107)
+    slot_group.empty()
+    lava_group.empty()
+    exit_group.empty()
+
+    #load in level data and create world
+    if path.exists(f"level{level}_data"):
+        pickle_in = open(f"level{level}_data", "rb")
+        world_data = pickle.load(pickle_in)
+    world = World(world_data)
+
+    return world
 
 
 class Button():
@@ -133,6 +152,11 @@ class Player():
             if pg.sprite.spritecollide(self, lava_group, False):
                 game_over = -1
 
+            #check for collision with exit
+            if pg.sprite.spritecollide(self, exit_group, False):
+                game_over = 1
+
+
             #Update player position
             self.rect.x += dx
             self.rect.y += dy
@@ -213,6 +237,10 @@ class World():
                     #draw lava
                     lava = Lava(col_count * tile_size, row_count * tile_size + (tile_size // 2))
                     lava_group.add(lava)
+                if tile == 8:
+                    #draw exit
+                    exit = Exit(col_count * tile_size, row_count * tile_size - (tile_size // 2))
+                    exit_group.add(exit)
                 col_count += 1
             row_count += 1
 
@@ -247,31 +275,25 @@ class Lava(pg.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
-world_data= [
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,1,0,0,0,3,0,0,0,0,2,0,0,0,0,0,0,0,0,1],
-[1,0,0,2,2,2,2,0,0,2,1,0,0,2,2,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,1],
-[1,0,0,0,0,0,0,3,0,0,2,0,2,0,2,2,2,1,1,1],
-[1,0,0,0,0,2,2,2,2,6,6,6,6,6,1,1,1,1,1,1],
-[1,0,0,0,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-[1,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-]
-
+class Exit(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        img = pg.image.load("img/exit.png")
+        self.image = pg.transform.scale(img, (tile_size, int(tile_size * 1.5)))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
 
 player = Player(100, screen_height - 107)
 
 slot_group = pg.sprite.Group()
 lava_group = pg.sprite.Group()
+exit_group = pg.sprite.Group()
 
+#load in level data and create world
+if path.exists(f"level{level}_data"):
+    pickle_in = open(f"level{level}_data", "rb")
+    world_data = pickle.load(pickle_in)
 world = World(world_data)
 
 #Create buttons
@@ -302,14 +324,33 @@ while run:
 
         slot_group.draw(screen)
         lava_group.draw(screen)
+        exit_group.draw(screen)
 
         game_over = player.update(game_over)
 
         #If player is dead
         if game_over == -1:
             if restart_button.draw():
-                player.reset(100, screen_height - 107)
+                world_data = []
+                world = reset_level(level)
                 game_over = 0
+            
+        #If player has completed the level    
+        if game_over == 1:
+            #reset game and go to next level
+            level += 1
+            if level <= max_levels:
+                #reset level
+                world_data = []
+                world = reset_level(level)
+                game_over = 0
+            else:
+                #restart game
+                if restart_button.draw():
+                    level = 1
+                    world_data = []
+                    world = reset_level(level)
+                    game_over = 0
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
