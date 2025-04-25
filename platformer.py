@@ -18,7 +18,7 @@ pg.display.set_caption("Sankeformer")
 tile_size = 50
 game_over = 0
 main_menu = True
-level = 5
+level = 1
 max_levels = 5
 
 
