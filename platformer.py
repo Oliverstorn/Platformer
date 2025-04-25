@@ -10,7 +10,7 @@ fps = 60
 screen_widht = 1000
 screen_height = 775
 screen = pg.display.set_mode((screen_widht, screen_height))
-pg.display.set_caption("Platformer")
+pg.display.set_caption("Sankeformer")
 
 # define game variables
 tile_size = 50
@@ -30,7 +30,7 @@ class Player():
         self.counter = 0
         for num in range(1,3):
             img_right =pg.image.load(f"img/sanke{num}.png")
-            img_right = pg.transform.scale(img_right, (80,80))
+            img_right = pg.transform.scale(img_right, (40,80))
             img_left = pg.transform.flip(img_right, True, False)
             self.images_right.append(img_right)
             self.images_left.append(img_left)
@@ -38,6 +38,8 @@ class Player():
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
         self.vel_y = 0
         self.jumped = False
         self.direction = 0
@@ -88,7 +90,24 @@ class Player():
         dy += self.vel_y
 
         #Check for collision
-        
+        for tile in world.tile_list:
+            #check for collision in x direction
+            if tile[1].colliderect(self.rect.x +dx, self.rect.y, self.width, self.height):
+                dx = 0
+            
+            #check for collision in y direction
+            if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                #check if below the ground i.e jumping
+                if self.vel_y < 0:
+                    dy = tile[1].bottom - self.rect.top
+                    self.vel_y = 0
+                #check if above the ground i.e falling
+                elif self.vel_y >= 0:
+                    dy =tile[1].top - self.rect.bottom
+                    self.vel_y = 0
+            
+
+
 
         #Update player position
         self.rect.x += dx
@@ -104,6 +123,7 @@ class Player():
 
         #draw player onto screen
         screen.blit(self.image, self.rect)
+        pg.draw.rect(screen, (255,255,255), self.rect,2)
 
 class World():
     def __init__(self,data):
@@ -141,6 +161,7 @@ class World():
     def draw(self):
         for tile in self.tile_list:
             screen.blit(tile[0], tile[1])
+            pg.draw.rect(screen, (255,255,255), tile[1],2)
 
 world_data= [
 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -150,12 +171,12 @@ world_data= [
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,2,0,2,0,2,2,2,2,2,1],
+[1,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1],
+[1,1,0,0,0,0,0,0,0,2,1,0,0,2,2,0,0,0,0,1],
+[1,0,0,2,2,2,2,0,0,1,0,0,0,1,1,2,0,0,0,1],
+[1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,1],
+[1,0,0,0,0,0,0,0,0,0,2,0,2,0,2,2,2,1,1,1],
 [1,0,0,0,0,2,2,2,2,0,0,0,0,0,1,1,1,1,1,1],
 [1,0,0,0,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 [1,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
