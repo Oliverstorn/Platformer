@@ -14,6 +14,7 @@ pg.display.set_caption("Sankeformer")
 
 # define game variables
 tile_size = 50
+game_over = 0
 
 
 #Load images
@@ -105,9 +106,9 @@ class Player():
                 elif self.vel_y >= 0:
                     dy =tile[1].top - self.rect.bottom
                     self.vel_y = 0
-            
 
-
+        #check for collision with enemies
+        if pg.sprite.spritecollide    
 
         #Update player position
         self.rect.x += dx
@@ -155,6 +156,14 @@ class World():
                     img_rect.y = row_count * tile_size
                     tile = (img, img_rect)
                     self.tile_list.append(tile)
+                if tile == 3:
+                    #draw Enemy
+                    slot = Enemy(col_count * tile_size, row_count * tile_size + 7)
+                    slot_group.add(slot)
+                if tile == 6:
+                    #draw lava
+                    lava = Lava(col_count * tile_size, row_count * tile_size + (tile_size // 2))
+                    lava_group.add(lava)
                 col_count += 1
             row_count += 1
 
@@ -163,6 +172,32 @@ class World():
             screen.blit(tile[0], tile[1])
             pg.draw.rect(screen, (255,255,255), tile[1],2)
 
+class Enemy(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = pg.image.load("img/slut.png")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.move_direction = 1
+        self.move_counter = 0
+
+    def update(self):
+        self.rect.x += self.move_direction
+        self.move_counter += 1
+        if abs(self.move_counter) > 50:
+            self.move_direction *= -1
+            self.move_counter *= -1
+
+class Lava(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        img = pg.image.load("img/lava.png")
+        self.image = pg.transform.scale(img, (tile_size, tile_size // 2))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
 world_data= [
 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -170,19 +205,23 @@ world_data= [
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,0,0,0,3,0,0,0,0,2,0,0,0,0,0,0,0,0,1],
+[1,0,0,2,2,2,2,0,0,2,1,0,0,2,2,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1],
-[1,1,0,0,0,0,0,0,0,2,1,0,0,2,2,0,0,0,0,1],
-[1,0,0,2,2,2,2,0,0,1,0,0,0,1,1,2,0,0,0,1],
-[1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,1],
-[1,0,0,0,0,0,0,0,0,0,2,0,2,0,2,2,2,1,1,1],
-[1,0,0,0,0,2,2,2,2,0,0,0,0,0,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,3,0,0,2,0,2,0,2,2,2,1,1,1],
+[1,0,0,0,0,2,2,2,2,6,6,6,6,6,1,1,1,1,1,1],
 [1,0,0,0,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 [1,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ]
 
 player = Player(100, screen_height - 107)
+
+slot_group = pg.sprite.Group()
+lava_group = pg.sprite.Group()
+
 world = World(world_data)
 
 run = True
@@ -195,6 +234,11 @@ while run:
     screen.blit(sun_img, (100,100))
 
     world.draw()
+
+    slot_group.update()
+    slot_group.draw(screen)
+    lava_group.draw(screen)
+
     player.update()
 
 
