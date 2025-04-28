@@ -1,8 +1,12 @@
 import pygame as pg
+from pygame.locals import *
+from pygame import mixer
 import pickle
 from os import path
 
 # Setup
+pg.mixer.pre_init(44100, -16, 2, 512)
+
 pg.init()
 
 clock = pg.time.Clock()
@@ -14,13 +18,21 @@ screen_height = 775
 screen = pg.display.set_mode((screen_widht, screen_height))
 pg.display.set_caption("Sankeformer")
 
+#define 
+font = pg.font.SysFont("Bauhaus 93", 55)
+font_score = pg.font.SysFont("Bauhaus 93", 30)
+
 # define game variables
 tile_size = 50
 game_over = 0
 main_menu = True
 level = 1
 max_levels = 5
+score = 0
 
+#define colours
+white = (255, 255, 255)
+blue = (0, 0, 255)
 
 #Load images
 sun_img = pg.image.load("img/sun.png")
@@ -28,6 +40,20 @@ bg_img = pg.image.load("img/sky.png")
 restart_img = pg.image.load("img/restart_btn.png")
 start_img = pg.image.load("img/start_btn.png")
 exit_img = pg.image.load("img/exit_btn.png")
+
+#load sounds
+pg.mixer.music.load("img/music.wav")
+pg.mixer.music.play(-1, 0.0,5000)
+coin_fx = pg.mixer.Sound("img/img_coin.wav")
+coin_fx.set_volume(0.5)
+jump_fx = pg.mixer.Sound("img/img_jump.wav")
+jump_fx.set_volume(0.5)
+game_over_fx = pg.mixer.Sound("img/img_game_over.wav")
+game_over_fx.set_volume(0.5)
+
+def draw_text(text, font, text_col, x, y):
+    img = font.render(text, True, text_col)
+    screen.blit(img, (x, y))
 
 #function to reset level
 def reset_level(level):
@@ -88,6 +114,7 @@ class Player():
             #get key presses
             key = pg.key.get_pressed()
             if key[pg.K_SPACE] and self.jumped == False and self.in_air == False:
+                jump_fx.play()
                 self.vel_y = -15
                 self.jumped = True
             if key[pg.K_SPACE] == False:
@@ -146,11 +173,12 @@ class Player():
             #check for collision with enemies
             if pg.sprite.spritecollide(self, slot_group, False):
                 game_over = -1
+                game_over_fx.play()
     
-
             #check for collision with Lava
             if pg.sprite.spritecollide(self, lava_group, False):
                 game_over = -1
+                game_over_fx.play()
 
             #check for collision with exit
             if pg.sprite.spritecollide(self, exit_group, False):
@@ -237,6 +265,10 @@ class World():
                     #draw lava
                     lava = Lava(col_count * tile_size, row_count * tile_size + (tile_size // 2))
                     lava_group.add(lava)
+                if tile == 7:
+                    #draw coin
+                    coin = Coin(col_count* tile_size + (tile_size // 2), row_count * tile_size + (tile_size // 2))
+                    coin_group.add(coin)
                 if tile == 8:
                     #draw exit
                     exit = Exit(col_count * tile_size, row_count * tile_size - (tile_size // 2))
@@ -275,6 +307,15 @@ class Lava(pg.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+class Coin(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        img = pg.image.load("img/polet.png")
+        self.image = pg.transform.scale(img, (tile_size // 2, tile_size // 2))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+
 class Exit(pg.sprite.Sprite):
     def __init__(self,x,y):
         pg.sprite.Sprite.__init__(self)
@@ -288,7 +329,12 @@ player = Player(100, screen_height - 107)
 
 slot_group = pg.sprite.Group()
 lava_group = pg.sprite.Group()
+coin_group = pg.sprite.Group()
 exit_group = pg.sprite.Group()
+
+#create dummy coin for showing score
+score_coin = Coin(tile_size // 2, tile_size // 2)
+coin_group.add(score_coin)
 
 #load in level data and create world
 if path.exists(f"level{level}_data"):
@@ -321,9 +367,17 @@ while run:
 
         if game_over == 0:
             slot_group.update()
+            #update score
+            #check if a coin has been collected
+            if pg.sprite.spritecollide(player, coin_group, True):
+                score += 1
+                coin_fx.play()
+            draw_text("Score: " + str(score), font_score, white, tile_size + 10, 10)
+
 
         slot_group.draw(screen)
         lava_group.draw(screen)
+        coin_group.draw(screen)
         exit_group.draw(screen)
 
         game_over = player.update(game_over)
@@ -334,6 +388,7 @@ while run:
                 world_data = []
                 world = reset_level(level)
                 game_over = 0
+                score = 0
             
         #If player has completed the level    
         if game_over == 1:
@@ -345,12 +400,14 @@ while run:
                 world = reset_level(level)
                 game_over = 0
             else:
+                draw_text("YOU HAVE COMPLETED SANKEFORMER", font, blue, (screen_widht // 6) - 140, screen_height // 2 - 50)
                 #restart game
                 if restart_button.draw():
                     level = 1
                     world_data = []
                     world = reset_level(level)
                     game_over = 0
+                    score = 0
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
