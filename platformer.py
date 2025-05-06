@@ -42,14 +42,14 @@ start_img = pg.image.load("img/start_btn.png")
 exit_img = pg.image.load("img/exit_btn.png")
 
 #load sounds
-pg.mixer.music.load("img/music.wav")
-pg.mixer.music.play(-1, 0.0,5000)
-coin_fx = pg.mixer.Sound("img/img_coin.wav")
+#pg.mixer.music.load("img/music.wav")
+#pg.mixer.music.play(-1, 0.0,5000)
+coin_fx = pg.mixer.Sound("img/coin.wav")
 coin_fx.set_volume(0.5)
-jump_fx = pg.mixer.Sound("img/img_jump.wav")
+jump_fx = pg.mixer.Sound("img/jumping.wav")
 jump_fx.set_volume(0.5)
-game_over_fx = pg.mixer.Sound("img/img_game_over.wav")
-game_over_fx.set_volume(0.5)
+game_over_fx = pg.mixer.Sound("img/dead_sound.wav")
+game_over_fx.set_volume(100)
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
@@ -200,7 +200,8 @@ class Player():
 
         #draw player onto screen
         screen.blit(self.image, self.rect)
-        pg.draw.rect(screen, (255,255,255), self.rect,2)
+        #Draw rectangle around player for debugging
+        #pg.draw.rect(screen, (255,255,255), self.rect,2)
 
         return game_over
 
@@ -279,7 +280,8 @@ class World():
     def draw(self):
         for tile in self.tile_list:
             screen.blit(tile[0], tile[1])
-            pg.draw.rect(screen, (255,255,255), tile[1],2)
+            #Draw rectangle around tile for debugging
+            #pg.draw.rect(screen, (255,255,255), tile[1],2)
 
 class Enemy(pg.sprite.Sprite):
     def __init__(self,x,y):
@@ -336,6 +338,7 @@ exit_group = pg.sprite.Group()
 score_coin = Coin(tile_size // 2, tile_size // 2)
 coin_group.add(score_coin)
 
+
 #load in level data and create world
 if path.exists(f"level{level}_data"):
     pickle_in = open(f"level{level}_data", "rb")
@@ -362,7 +365,6 @@ while run:
         if start_button.draw() == True:
             main_menu = False
     else: 
-
         world.draw()
 
         if game_over == 0:
