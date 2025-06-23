@@ -35,6 +35,8 @@ white = (255, 255, 255)
 blue = (0, 0, 255)
 
 #Load images
+dirt_img = pg.image.load("img/dirt.png")
+grass_img = pg.image.load("img/grass.png")
 sun_img = pg.image.load("img/sun.png")
 bg_img = pg.image.load("img/sky.png")
 restart_img = pg.image.load("img/restart_btn.png")
@@ -42,8 +44,8 @@ start_img = pg.image.load("img/start_btn.png")
 exit_img = pg.image.load("img/exit_btn.png")
 
 #load sounds
-#pg.mixer.music.load("img/music.wav")
-#pg.mixer.music.play(-1, 0.0,5000)
+pg.mixer.music.load("img/music.wav")
+pg.mixer.music.play(-1, 0.0,5000)
 coin_fx = pg.mixer.Sound("img/coin.wav")
 coin_fx.set_volume(0.5)
 jump_fx = pg.mixer.Sound("img/jumping.wav")
@@ -232,10 +234,6 @@ class World():
     def __init__(self,data):
         self.tile_list = []
 
-        # load images
-        dirt_img = pg.image.load("img/dirt.png")
-        grass_img = pg.image.load("img/grass.png")
-
         # making variable for row, so it keeps track of the row
         row_count = 0
         for row in data:
@@ -251,7 +249,7 @@ class World():
                     tile = (img, img_rect)
                     self.tile_list.append(tile)
                 if tile == 2:
-                    #draw dirt
+                    #draw grass
                     img = pg.transform.scale(grass_img, (tile_size, tile_size))
                     img_rect = img.get_rect()
                     img_rect.x = col_count * tile_size
@@ -317,7 +315,6 @@ class Coin(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
-
 class Exit(pg.sprite.Sprite):
     def __init__(self,x,y):
         pg.sprite.Sprite.__init__(self)
@@ -367,6 +364,7 @@ while run:
     else: 
         world.draw()
 
+        # Game is running, enemies update and coins are collected
         if game_over == 0:
             slot_group.update()
             #update score
@@ -396,6 +394,7 @@ while run:
         if game_over == 1:
             #reset game and go to next level
             level += 1
+            score = 0
             if level <= max_levels:
                 #reset level
                 world_data = []
